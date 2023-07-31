@@ -4,8 +4,8 @@ import { printlnStderr, c } from "./src/utils.ts";
 
 const program = new Denomander({
   app_version: "1.0.0",
-  app_name: "dnpm",
-  app_description: "dnpm is a tiny package manager for deno.",
+  app_name: "depm",
+  app_description: "depm is a tiny package manager for deno.",
 });
 
 program
