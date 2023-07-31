@@ -1,7 +1,6 @@
 import Denomander from "denomander/mod.ts";
 import { Packages } from "./src/Packages.ts";
-import { c } from "./src/c.ts";
-import { printlnStderr } from "./src/utils.ts";
+import { printlnStderr, c } from "./src/utils.ts";
 
 const program = new Denomander({
   app_version: "1.0.0",
