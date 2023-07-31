@@ -10,7 +10,7 @@
 
 # Installation
 ```sh
-deno install -n depm ./cli.ts --import-map ./deno.json -A -f
+deno install -n depm https://deno.land/x/depm@1.0.0/cli.ts --import-map https://deno.land/x/depm@1.0.0/deno.json -A -f
 ```
 
 # Usage
