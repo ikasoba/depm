@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "denomander/": "https://deno.land/x/denomander@0.9.3/"
+  }
+}
