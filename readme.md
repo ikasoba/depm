@@ -8,6 +8,10 @@
   tiny package manager for deno
 </p>
 
+<p align="center">
+  <a href="https://deno.land/x/depm"><img src="https://shield.deno.dev/x/depm" alt="deno module" /></a>
+</p>
+
 # Installation
 ```sh
 deno install -n depm https://deno.land/x/depm/cli.ts --import-map https://deno.land/x/depm/deno.json -A

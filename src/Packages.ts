@@ -311,23 +311,6 @@ export class Packages {
         ? new URL("./mod.ts", url).toString()
         : url;
 
-    if (query.type == "esm" || query.type == "npm") {
-      return [
-        {
-          ...query,
-          alias,
-          url,
-          cacheUrl,
-        },
-        {
-          ...query,
-          alias: alias.replace(/\/$/, ""),
-          url,
-          cacheUrl,
-        },
-      ];
-    }
-
     return [
       {
         ...query,
