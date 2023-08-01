@@ -38,9 +38,15 @@ depm add npm:@ikasoba000/daizu
 # Install from esm.sh
 
 ```sh
-# Version notation is required
 depm add esm:express
 depm add esm:chai
+```
+
+# Install from github
+
+```sh
+depm add gh:tajpouria/cors
+depm add gh:colinhacks/zod/deno/lib
 ```
 
 # Install from nest.land

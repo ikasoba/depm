@@ -57,6 +57,14 @@ export type ParsedQuery =
       path: string;
     }
   | {
+      type: "gh";
+      alias: string;
+      owner: string;
+      name: string;
+      tag?: string;
+      path: string;
+    }
+  | {
       type: "other";
       scheme: string;
       alias: string;
@@ -93,6 +101,20 @@ export class Packages {
         alias: m[2].replace(/(?<!\/)$/, "/"),
         name: m[2],
         version: m[3],
+        path: normalizePath(m[4]),
+      };
+    }
+
+    m = query.match(
+      /^gh:([^/\s@:]+)\/([^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/
+    );
+    if (m) {
+      return {
+        type: "gh",
+        alias: m[2].replace(/(?<!\/)$/, "/"),
+        owner: m[1],
+        name: m[2],
+        tag: m[3],
         path: normalizePath(m[4]),
       };
     }
@@ -242,6 +264,30 @@ export class Packages {
         });
       }
 
+      case "gh": {
+        const res = await fetch(
+          `https://api.github.com/repos/${parsedQuery.owner}/${parsedQuery.name}/tags`
+        );
+        const tags: { name: string }[] = await res.json();
+
+        if (parsedQuery.tag && tags.every((x) => x.name != parsedQuery.tag)) {
+          return Result.err({
+            type: "version_not_found",
+            value: parsedQuery.tag,
+          });
+        }
+
+        const tag = parsedQuery.tag ?? tags[0].name;
+
+        return Result.ok({
+          type: parsedQuery.type,
+          name: parsedQuery.alias,
+          url: new URL(
+            `https://raw.githubusercontent.com/${parsedQuery.owner}/${parsedQuery.name}/${tag}${parsedQuery.path}`
+          ),
+        });
+      }
+
       default: {
         return Result.err({
           type: "package_type_not_supported",
@@ -261,7 +307,7 @@ export class Packages {
       query.url instanceof URL ? query.url.toString() : query.url
     );
     const cacheUrl =
-      ["deno", "nest"].includes(query.type) && url.endsWith("/")
+      ["deno", "nest", "gh"].includes(query.type) && url.endsWith("/")
         ? new URL("./mod.ts", url).toString()
         : url;
 

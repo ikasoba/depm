@@ -37,6 +37,10 @@ export const printlnStderr = async (message: string) => {
   await Deno.stderr.write(new TextEncoder().encode(message + "\n"));
 };
 
+export const printlnStdout = async (message: string) => {
+  await Deno.stdout.write(new TextEncoder().encode(message + "\n"));
+};
+
 export const normalizePath = (path: string) => {
   return path
     .replace(/\/+$/, "/")
@@ -47,4 +51,29 @@ export const normalizePath = (path: string) => {
 export type Merge<X, Y> = _Merge<X & Y>;
 type _Merge<X> = {
   [K in keyof X]: X[K];
+};
+
+export const modifyJson = async <T>(path: string, content: T) => {
+  let prevDenoJson;
+  try {
+    prevDenoJson = JSON.parse(
+      new TextDecoder().decode(await Deno.readFile(path))
+    );
+  } catch (_) {
+    prevDenoJson = {};
+  }
+
+  await Deno.writeFile(
+    path,
+    new TextEncoder().encode(
+      JSON.stringify(
+        {
+          ...prevDenoJson,
+          ...content,
+        },
+        null,
+        "  "
+      )
+    )
+  );
 };

@@ -1,4 +1,6 @@
 {
   "deno.enable": true,
-  "deno.unstable": true
+  "deno.unstable": true,
+  "editor.fontFamily": "Cica, 'Source Code Pro', Consolas, 'Courier New', monospace",
+  "editor.fontSize": 14
 }
