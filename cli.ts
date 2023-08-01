@@ -1,25 +1,9 @@
 import { Command } from "command/mod.ts";
 import { Packages } from "./src/Packages.ts";
-import { printlnStderr, c, modifyJson } from "./src/utils.ts";
+import { c, command, exec, modifyJson, printlnStderr } from "./src/utils.ts";
 import * as semver from "semver/mod.ts";
 import { PackageUtil } from "./src/PackaageUtil.ts";
 import depmJson from "./depm.json" assert { type: "json" };
-
-const exec = async (...args: string[]) => {
-  const command = new Deno.Command(args[0], {
-    args: args.slice(1),
-  });
-  const proc = await command.spawn();
-  const status = await proc.status;
-
-  if (!status.success) {
-    const command = args
-      .map((x) => (/\s|\"/.test(x) ? `"${x.replaceAll('"', '\\"')}"` : x))
-      .join(" ");
-    await printlnStderr(c`error: Failed to execute \`${command}\`.`);
-    Deno.exit(status.code);
-  }
-};
 
 const program = new Command()
   .name("depm")
@@ -36,7 +20,7 @@ program
     let prevdepmJson;
     try {
       prevdepmJson = JSON.parse(
-        new TextDecoder().decode(await Deno.readFile("deno.json"))
+        new TextDecoder().decode(await Deno.readFile("deno.json")),
       );
     } catch (_) {
       prevdepmJson = {};
@@ -53,11 +37,11 @@ program
           await printlnStderr(c`error: Could not find package \`${pkg}\`.`);
         } else if (_result.value.type == "package_type_not_supported") {
           await printlnStderr(
-            c`error: Package type \`${_result.value.value}\` is not supported.`
+            c`error: Package type \`${_result.value.value}\` is not supported.`,
           );
         } else if (_result.value.type == "version_not_found") {
           await printlnStderr(
-            c`error: Could not find version \`${_result.value.value}\`.`
+            c`error: Could not find version \`${_result.value.value}\`.`,
           );
         } else if (_result.value.type == "query_parse_failed") {
           await printlnStderr(c`error: Failed to parse query \`${pkg}\`.`);
@@ -72,10 +56,6 @@ program
 
     for (const { info } of packageInfos) {
       importMap[info.alias] = info.url;
-
-      if (info.type == "esm" || info.type == "npm") {
-        importMap[info.alias.replace(/\/$/, "")] = info.url;
-      }
 
       cacheUrls.push(info.cacheUrl);
     }
@@ -96,16 +76,16 @@ program
             },
           },
           null,
-          "  "
-        )
-      )
+          "  ",
+        ),
+      ),
     );
 
     await printlnStderr(
       c`success: Added ${packageInfos.length} packages to dependencies.\n\n` +
         packageInfos
           .map(({ query, info }) => c`  - \`${query}\` -> \`${info.alias}\``)
-          .join("\n")
+          .join("\n"),
     );
   });
 
@@ -115,7 +95,7 @@ program
     let prevdepmJson;
     try {
       prevdepmJson = JSON.parse(
-        new TextDecoder().decode(await Deno.readFile("deno.json"))
+        new TextDecoder().decode(await Deno.readFile("deno.json")),
       );
     } catch (_) {
       prevdepmJson = {};
@@ -145,17 +125,37 @@ program
 
     await Deno.writeFile(
       "deno.json",
-      new TextEncoder().encode(JSON.stringify(newdepmJson, null, "  "))
+      new TextEncoder().encode(JSON.stringify(newdepmJson, null, "  ")),
     );
 
     await printlnStderr(
       c`success: Removed ${names.length} packages to dependencies.\n\n` +
-        names.map((name) => c`  - \`${name}\``).join("\n")
+        names.map((name) => c`  - \`${name}\``).join("\n"),
     );
   });
 
 program.command("task", c`call \`deno task\``);
 program.command("test", c`call \`deno test\``);
+
+const incrementVersion = async (mode: "major" | "minor" | "patch") => {
+  const defaultVersions = {
+    major: "1.0.0",
+    minor: "0.1.0",
+    patch: "0.0.1",
+  };
+
+  const versions = await PackageUtil.getVersions();
+
+  const newVersion = semver.inc(versions[0], mode) ?? defaultVersions[mode];
+
+  await modifyJson("depm.json", { version: newVersion });
+
+  await exec("git", "add", ".");
+  await exec("git", "commit", "-m", newVersion);
+  await exec("git", "tag", newVersion);
+
+  await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
+};
 
 program
   .command("version", "...")
@@ -166,45 +166,19 @@ program
   .option("--major", "Increment major version.", {
     standalone: true,
     async action(_) {
-      const versions = await PackageUtil.getVersions();
-
-      const newVersion = semver.inc(versions[0], "major") ?? "1.0.0";
-
-      await exec("git", "tag", newVersion);
-
-      await modifyJson("depm.json", { version: newVersion });
-
-      await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
+      await incrementVersion("major");
     },
   })
   .option("--minor", "Increment minor version.", {
     standalone: true,
     async action(_) {
-      const versions = await PackageUtil.getVersions();
-
-      const newVersion = semver.inc(versions[0], "minor") ?? "0.1.0";
-
-      await exec("git", "tag", newVersion);
-
-      await modifyJson("depm.json", { version: newVersion });
-
-      await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
+      await incrementVersion("minor");
     },
   })
   .option("--patch", "Increment patch version.", {
     standalone: true,
     async action(_) {
-      const versions = await PackageUtil.getVersions();
-
-      const newVersion = semver.inc(versions[0], "patch") ?? "0.0.1";
-
-      await modifyJson("depm.json", { version: newVersion });
-
-      await exec("git", "add", ".");
-      await exec("git", "commit", "-m", newVersion);
-      await exec("git", "tag", newVersion);
-
-      await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
+      await incrementVersion("patch");
     },
   })
   .action(async () => {
@@ -217,7 +191,7 @@ program.command("upgrade", "update to new version").action(async () => {
   const res = await fetch("https://apiland.deno.dev/v2/modules/depm");
   if (!res.ok) {
     await printlnStderr(
-      c`error: failed to fetch \`https://apiland.deno.dev/v2/modules/depm\`.`
+      c`error: failed to fetch \`https://apiland.deno.dev/v2/modules/depm\`.`,
     );
     Deno.exit(1);
   }
@@ -238,7 +212,7 @@ program.command("upgrade", "update to new version").action(async () => {
     "https://deno.land/x/depm/deno.json",
     "-A",
     "-f",
-    "--reload"
+    "--reload",
   );
 
   await printlnStderr(c`success: Finished updating to the latest version.`);

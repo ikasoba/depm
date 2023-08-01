@@ -77,3 +77,26 @@ export const modifyJson = async <T>(path: string, content: T) => {
     )
   );
 };
+
+export const exec = async (...args: string[]) => {
+  const command = new Deno.Command(args[0], {
+    args: args.slice(1),
+  });
+  const proc = await command.spawn();
+  const status = await proc.status;
+
+  if (!status.success) {
+    const command = args
+      .map((x) => (/\s|\"/.test(x) ? `"${x.replaceAll('"', '\\"')}"` : x))
+      .join(" ");
+    await printlnStderr(c`error: Failed to execute \`${command}\`.`);
+    Deno.exit(status.code);
+  }
+};
+
+export const command = (args: string[], option: Deno.CommandOptions = {}) => {
+  return new Deno.Command(args[0], {
+    ...option,
+    args: args.slice(1),
+  });
+};
