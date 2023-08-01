@@ -3,7 +3,7 @@ import { Packages } from "./src/Packages.ts";
 import { printlnStderr, c, modifyJson } from "./src/utils.ts";
 import * as semver from "semver/mod.ts";
 import { PackageUtil } from "./src/PackaageUtil.ts";
-import denoJson from "./depm.json" assert { type: "json" };
+import depmJson from "./depm.json" assert { type: "json" };
 
 const exec = async (...args: string[]) => {
   const command = new Deno.Command(args[0], {
@@ -24,7 +24,7 @@ const exec = async (...args: string[]) => {
 const program = new Command()
   .name("depm")
   .description("depm is a tiny package manager for deno.")
-  .version(denoJson.version)
+  .version(depmJson.version)
   .action(async () => {
     await program.showHelp();
   });
@@ -33,13 +33,13 @@ program
   .command("add [packages...]", "Add dependency")
   .option("--noLock", "avoid generating lock file")
   .action(async ({ noLock }, ...packages) => {
-    let prevDenoJson;
+    let prevdepmJson;
     try {
-      prevDenoJson = JSON.parse(
+      prevdepmJson = JSON.parse(
         new TextDecoder().decode(await Deno.readFile("deno.json"))
       );
     } catch (_) {
-      prevDenoJson = {};
+      prevdepmJson = {};
     }
 
     const importMap: { [k: string]: string } = {};
@@ -89,9 +89,9 @@ program
       new TextEncoder().encode(
         JSON.stringify(
           {
-            ...prevDenoJson,
+            ...prevdepmJson,
             imports: {
-              ...(prevDenoJson.imports ?? {}),
+              ...(prevdepmJson.imports ?? {}),
               ...importMap,
             },
           },
@@ -112,27 +112,27 @@ program
 program
   .command("remove [names...]", "Remove dependencies")
   .action(async (_, ...names) => {
-    let prevDenoJson;
+    let prevdepmJson;
     try {
-      prevDenoJson = JSON.parse(
+      prevdepmJson = JSON.parse(
         new TextDecoder().decode(await Deno.readFile("deno.json"))
       );
     } catch (_) {
-      prevDenoJson = {};
+      prevdepmJson = {};
     }
 
-    const newDenoJson = {
-      ...prevDenoJson,
+    const newdepmJson = {
+      ...prevdepmJson,
       imports: {
-        ...(prevDenoJson.imports ?? {}),
+        ...(prevdepmJson.imports ?? {}),
       },
     };
 
     for (const name of names) {
       let isDeleted = false;
-      for (const k in newDenoJson.imports) {
+      for (const k in newdepmJson.imports) {
         if (k == name || (k.slice(0, -1) == name && k.at(-1) == "/")) {
-          delete newDenoJson.imports[k];
+          delete newdepmJson.imports[k];
           isDeleted = true;
         }
       }
@@ -145,7 +145,7 @@ program
 
     await Deno.writeFile(
       "deno.json",
-      new TextEncoder().encode(JSON.stringify(newDenoJson, null, "  "))
+      new TextEncoder().encode(JSON.stringify(newdepmJson, null, "  "))
     );
 
     await printlnStderr(
@@ -221,7 +221,7 @@ program.command("upgrade", "update to new version").action(async () => {
   }
 
   const module = await res.json();
-  if (denoJson.version == module.latest_version) {
+  if (depmJson.version == module.latest_version) {
     await printlnStderr(c`success: Already updated to the latest version.`);
     return;
   }
@@ -239,7 +239,7 @@ program.command("upgrade", "update to new version").action(async () => {
     "--reload"
   );
 
-  await printlnStderr(c`success: Already updated to the latest version.`);
+  await printlnStderr(c`success: Finished updating to the latest version.`);
 });
 
 if (import.meta.main) {
