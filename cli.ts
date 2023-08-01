@@ -235,7 +235,8 @@ program.command("upgrade", "update to new version").action(async () => {
     "--import-map",
     "https://deno.land/x/depm/deno.json",
     "-A",
-    "-f"
+    "-f",
+    "--reload"
   );
 
   await printlnStderr(c`success: Already updated to the latest version.`);
