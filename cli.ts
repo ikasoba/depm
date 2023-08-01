@@ -198,9 +198,11 @@ program
 
       const newVersion = semver.inc(versions[0], "patch") ?? "0.0.1";
 
-      await exec("git", "tag", newVersion);
-
       await modifyJson("depm.json", { version: newVersion });
+
+      await exec("git", "add", ".");
+      await exec("git", "commit", "-m", newVersion);
+      await exec("git", "tag", newVersion);
 
       await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
     },
