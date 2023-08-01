@@ -211,7 +211,7 @@ program
     await printlnStderr(versions.join("\n"));
   });
 
-program.command("update", "update to new version").action(async () => {
+program.command("upgrade", "update to new version").action(async () => {
   const res = await fetch("https://apiland.deno.dev/v2/modules/depm");
   if (!res.ok) {
     await printlnStderr(
@@ -221,7 +221,7 @@ program.command("update", "update to new version").action(async () => {
   }
 
   const module = await res.json();
-  if (denoJson.version == module) {
+  if (denoJson.version == module.latest_version) {
     await printlnStderr(c`success: Already updated to the latest version.`);
     return;
   }

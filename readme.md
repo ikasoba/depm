@@ -13,6 +13,11 @@
 deno install -n depm https://deno.land/x/depm/cli.ts --import-map https://deno.land/x/depm/deno.json -A -f
 ```
 
+# Upgrade
+```sh
+depm upgrade
+```
+
 # Usage
 # Install from deno.land
 
