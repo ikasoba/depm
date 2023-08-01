@@ -10,7 +10,7 @@
 
 # Installation
 ```sh
-deno install -n depm https://deno.land/x/depm@1.0.0/cli.ts --import-map https://deno.land/x/depm@1.0.0/deno.json -A -f
+deno install -n depm https://deno.land/x/depm/cli.ts --import-map https://deno.land/x/depm/deno.json -A -f
 ```
 
 # Usage
@@ -33,6 +33,14 @@ depm add deno:std/fmt/colors.ts
 ```sh
 depm add npm:express
 depm add npm:@ikasoba000/daizu
+```
+
+# Install from esm.sh
+
+```sh
+# Version notation is required
+depm add esm:express
+depm add esm:chai
 ```
 
 # Install from nest.land

@@ -39,6 +39,12 @@ export const printlnStderr = async (message: string) => {
 
 export const normalizePath = (path: string) => {
   return path
-    .replace(/(?<!\.tsx?|\.jsx?)$/, "/")
-    .replace(/(?<=\.tsx?|\.jsx?)\/+$/, "");
+    .replace(/\/+$/, "/")
+    .replace(/(?<=\.tsx?|\.jsx?)\/+$/, "")
+    .replace(/(?<!\.tsx?|\.jsx?|\/)$/, "/");
+};
+
+export type Merge<X, Y> = _Merge<X & Y>;
+type _Merge<X> = {
+  [K in keyof X]: X[K];
 };

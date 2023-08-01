@@ -3,7 +3,7 @@ import { Packages } from "./src/Packages.ts";
 import { printlnStderr, c } from "./src/utils.ts";
 
 const program = new Denomander({
-  app_version: "0.1.0",
+  app_version: "1.0.2",
   app_name: "depm",
   app_description: "depm is a tiny package manager for deno.",
 });
@@ -47,11 +47,18 @@ program
         Deno.exit(1);
       }
 
-      const result = _result.value;
-      const info = Packages.createPackageInfo(result);
+      const infos = Packages.createPackageInfo(_result.value);
+      packageInfos.push(...infos.map((info) => ({ query: pkg, info: info })));
+    }
+
+    for (const { info } of packageInfos) {
       importMap[info.alias] = info.url;
+
+      if (info.type == "esm" || info.type == "npm") {
+        importMap[info.alias.replace(/\/$/, "")] = info.url;
+      }
+
       cacheUrls.push(info.cacheUrl);
-      packageInfos.push({ query: pkg, info });
     }
 
     if (!program.noLock) {

@@ -1,5 +1,5 @@
 import { Result } from "./Result.ts";
-import { normalizePath, u } from "./utils.ts";
+import { Merge, normalizePath, u } from "./utils.ts";
 
 export type PackageFetchError =
   | {
@@ -36,6 +36,13 @@ export type ParsedQuery =
       path: string;
     }
   | {
+      type: "esm";
+      alias: string;
+      name: string;
+      version?: string;
+      path: string;
+    }
+  | {
       type: "nest";
       alias: string;
       name: string;
@@ -58,7 +65,11 @@ export type ParsedQuery =
       path: string;
     };
 
-export type ResolvedPackage = { type: string; name: string; url: URL | string };
+export type ResolvedPackage = {
+  type: ParsedQuery["type"];
+  name: string;
+  url: URL | string;
+};
 
 export class Packages {
   static parse(query: string): ParsedQuery | null {
@@ -74,15 +85,15 @@ export class Packages {
     }
 
     m = query.match(
-      /^npm:([^/\s@:]+|@[^/\s@:]+\/[^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/
+      /^(npm|esm):([^/\s@:]+|@[^/\s@:]+\/[^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/
     );
     if (m) {
       return {
-        type: "npm",
-        alias: m[1].replace(/(?<!\/)$/, "/"),
-        name: m[1],
-        version: m[2],
-        path: normalizePath(m[3]),
+        type: m[1] as "npm" | "esm",
+        alias: m[2].replace(/(?<!\/)$/, "/"),
+        name: m[2],
+        version: m[3],
+        path: normalizePath(m[4]),
       };
     }
 
@@ -207,6 +218,20 @@ export class Packages {
         });
       }
 
+      case "esm": {
+        let url = `https://esm.sh/${parsedQuery.name}${
+          parsedQuery.version ? "@" + parsedQuery.version : ""
+        }${parsedQuery.path}`;
+        const res = await fetch(url, { redirect: "manual" });
+        if (res.status == 302) url = res.headers.get("Location")!;
+
+        return Result.ok({
+          type: parsedQuery.type,
+          name: parsedQuery.alias,
+          url: url,
+        });
+      }
+
       case "nest": {
         return Result.ok({
           type: parsedQuery.type,
@@ -226,19 +251,44 @@ export class Packages {
     }
   }
 
-  static createPackageInfo(query: ResolvedPackage) {
+  static createPackageInfo(query: ResolvedPackage): (ResolvedPackage & {
+    alias: string;
+    url: string;
+    cacheUrl: string;
+  })[] {
     const alias = query.name;
-    const url = query.url instanceof URL ? query.url.toString() : query.url;
+    const url = normalizePath(
+      query.url instanceof URL ? query.url.toString() : query.url
+    );
     const cacheUrl =
       ["deno", "nest"].includes(query.type) && url.endsWith("/")
         ? new URL("./mod.ts", url).toString()
         : url;
 
-    return {
-      ...query,
-      alias,
-      url,
-      cacheUrl,
-    };
+    if (query.type == "esm" || query.type == "npm") {
+      return [
+        {
+          ...query,
+          alias,
+          url,
+          cacheUrl,
+        },
+        {
+          ...query,
+          alias: alias.replace(/\/$/, ""),
+          url,
+          cacheUrl,
+        },
+      ];
+    }
+
+    return [
+      {
+        ...query,
+        alias,
+        url,
+        cacheUrl,
+      },
+    ];
   }
 }
