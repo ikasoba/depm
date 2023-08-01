@@ -3,7 +3,7 @@ import { Packages } from "./src/Packages.ts";
 import { printlnStderr, c, modifyJson } from "./src/utils.ts";
 import * as semver from "semver/mod.ts";
 import { PackageUtil } from "./src/PackaageUtil.ts";
-import denoJson from "./deno.json" assert { type: "json" };
+import denoJson from "./depm.json" assert { type: "json" };
 
 const exec = async (...args: string[]) => {
   const command = new Deno.Command(args[0], {
@@ -172,7 +172,7 @@ program
 
       await exec("git", "tag", newVersion);
 
-      await modifyJson("deno.json", { version: newVersion });
+      await modifyJson("depm.json", { version: newVersion });
 
       await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
     },
@@ -186,7 +186,7 @@ program
 
       await exec("git", "tag", newVersion);
 
-      await modifyJson("deno.json", { version: newVersion });
+      await modifyJson("depm.json", { version: newVersion });
 
       await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
     },
@@ -200,7 +200,7 @@ program
 
       await exec("git", "tag", newVersion);
 
-      await modifyJson("deno.json", { version: newVersion });
+      await modifyJson("depm.json", { version: newVersion });
 
       await printlnStderr(c`success: Created Version \`${newVersion}\`.`);
     },
