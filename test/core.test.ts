@@ -114,6 +114,16 @@ Deno.test("parse query", () => {
         url: new URL("https://esm.sh/react"),
       },
     ],
+    [
+      "url:react=https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js",
+      {
+        type: "url",
+        alias: "react",
+        url: new URL(
+          "https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js",
+        ),
+      },
+    ],
   ];
 
   let isSafe = true;

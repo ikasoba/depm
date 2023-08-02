@@ -3,19 +3,19 @@ import { Merge, normalizePath, u } from "./utils.ts";
 
 export type PackageFetchError =
   | {
-      type: "query_parse_failed";
-    }
+    type: "query_parse_failed";
+  }
   | {
-      type: "package_not_found";
-    }
+    type: "package_not_found";
+  }
   | {
-      type: "version_not_found";
-      value: string;
-    }
+    type: "version_not_found";
+    value: string;
+  }
   | {
-      type: "package_type_not_supported";
-      value: string;
-    };
+    type: "package_type_not_supported";
+    value: string;
+  };
 
 export type InstallPackageFromQueryError = {
   type: "execution_failure";
@@ -24,54 +24,54 @@ export type InstallPackageFromQueryError = {
 
 export type ParsedQuery =
   | {
-      type: "url";
-      alias: string;
-      url: URL;
-    }
+    type: "url";
+    alias: string;
+    url: URL;
+  }
   | {
-      type: "npm";
-      alias: string;
-      name: string;
-      version?: string;
-      path: string;
-    }
+    type: "npm";
+    alias: string;
+    name: string;
+    version?: string;
+    path: string;
+  }
   | {
-      type: "esm";
-      alias: string;
-      name: string;
-      version?: string;
-      path: string;
-    }
+    type: "esm";
+    alias: string;
+    name: string;
+    version?: string;
+    path: string;
+  }
   | {
-      type: "nest";
-      alias: string;
-      name: string;
-      version: string;
-      path: string;
-    }
+    type: "nest";
+    alias: string;
+    name: string;
+    version: string;
+    path: string;
+  }
   | {
-      type: "deno";
-      alias: string;
-      name: string;
-      version?: string;
-      path: string;
-    }
+    type: "deno";
+    alias: string;
+    name: string;
+    version?: string;
+    path: string;
+  }
   | {
-      type: "gh";
-      alias: string;
-      owner: string;
-      name: string;
-      tag?: string;
-      path: string;
-    }
+    type: "gh";
+    alias: string;
+    owner: string;
+    name: string;
+    tag?: string;
+    path: string;
+  }
   | {
-      type: "other";
-      scheme: string;
-      alias: string;
-      name: string;
-      version?: string;
-      path: string;
-    };
+    type: "other";
+    scheme: string;
+    alias: string;
+    name: string;
+    version?: string;
+    path: string;
+  };
 
 export type ResolvedPackage = {
   type: ParsedQuery["type"];
@@ -85,15 +85,21 @@ export class Packages {
 
     m = query.match(/^url:([^\s=:]+)=(.+)$/);
     if (m && URL.canParse(m[2])) {
-      return {
+      const res: ParsedQuery = {
         type: "url",
-        alias: m[1].replace(/(?<!\/)$/, "/"),
+        alias: m[1],
         url: new URL(m[2]),
       };
+
+      if (!/(?:\.[tj]sx?)$/.test(res.url.pathname)) {
+        res.alias = res.alias.replace(/(?<!\/)$/, "/");
+      }
+
+      return res;
     }
 
     m = query.match(
-      /^(npm|esm):([^/\s@:]+|@[^/\s@:]+\/[^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/
+      /^(npm|esm):([^/\s@:]+|@[^/\s@:]+\/[^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/,
     );
     if (m) {
       return {
@@ -106,7 +112,7 @@ export class Packages {
     }
 
     m = query.match(
-      /^gh:([^/\s@:]+)\/([^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/
+      /^gh:([^/\s@:]+)\/([^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/,
     );
     if (m) {
       return {
@@ -120,7 +126,7 @@ export class Packages {
     }
 
     m = query.match(
-      /^(?:([^/\s:]+):)?([^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/
+      /^(?:([^/\s:]+):)?([^/\s@:]+)(?:@([^/\s:]+))?((?:\/[^/\s:]+)*)$/,
     );
     if (m == null || m[1] == "url" || m[1] == "npm") return null;
     if (m[1] == "nest" && m[2] == null) return null;
@@ -167,7 +173,7 @@ export class Packages {
   }
 
   static async resolve(
-    query: string
+    query: string,
   ): Promise<Result<ResolvedPackage, PackageFetchError>> {
     const parsedQuery = this.parse(query);
     if (parsedQuery == null) return Result.err({ type: "query_parse_failed" });
@@ -175,7 +181,7 @@ export class Packages {
     switch (parsedQuery.type) {
       case "deno": {
         const res = await fetch(
-          u`https://apiland.deno.dev/v2/modules/${parsedQuery.name}`
+          u`https://apiland.deno.dev/v2/modules/${parsedQuery.name}`,
         );
 
         if (!res.ok) {
@@ -203,7 +209,7 @@ export class Packages {
             url: new URL(
               `https://deno.land/${parsedQuery.name}${
                 version ? "@" + version : ""
-              }${parsedQuery.path}`
+              }${parsedQuery.path}`,
             ),
           });
         } else {
@@ -213,15 +219,16 @@ export class Packages {
             url: new URL(
               `https://deno.land/x/${parsedQuery.name}${
                 version ? "@" + version : ""
-              }${parsedQuery.path}`
+              }${parsedQuery.path}`,
             ),
           });
         }
       }
 
       case "url": {
-        if (parsedQuery.url == null)
+        if (parsedQuery.url == null) {
           return Result.err({ type: "query_parse_failed" });
+        }
 
         return Result.ok({
           type: parsedQuery.type,
@@ -259,14 +266,14 @@ export class Packages {
           type: parsedQuery.type,
           name: parsedQuery.alias,
           url: new URL(
-            `https://x.nest.land/${parsedQuery.name}@${parsedQuery.version}${parsedQuery.path}`
+            `https://x.nest.land/${parsedQuery.name}@${parsedQuery.version}${parsedQuery.path}`,
           ),
         });
       }
 
       case "gh": {
         const res = await fetch(
-          `https://api.github.com/repos/${parsedQuery.owner}/${parsedQuery.name}/tags`
+          `https://api.github.com/repos/${parsedQuery.owner}/${parsedQuery.name}/tags`,
         );
         const tags: { name: string }[] = await res.json();
 
@@ -283,7 +290,7 @@ export class Packages {
           type: parsedQuery.type,
           name: parsedQuery.alias,
           url: new URL(
-            `https://raw.githubusercontent.com/${parsedQuery.owner}/${parsedQuery.name}/${tag}${parsedQuery.path}`
+            `https://raw.githubusercontent.com/${parsedQuery.owner}/${parsedQuery.name}/${tag}${parsedQuery.path}`,
           ),
         });
       }
@@ -304,7 +311,7 @@ export class Packages {
   })[] {
     const alias = query.name;
     const url = normalizePath(
-      query.url instanceof URL ? query.url.toString() : query.url
+      query.url instanceof URL ? query.url.toString() : query.url,
     );
     const cacheUrl =
       ["deno", "nest", "gh"].includes(query.type) && url.endsWith("/")
