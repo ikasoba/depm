@@ -9,7 +9,7 @@ export class PackageUtil {
       .replace(/\s*$/, "")
       .split("\n")
       .filter((x) => semver.valid(x))
-      .sort((x, y) => -semver.gt(x, y));
+      .sort((x, y) => +semver.lt(x, y));
 
     return tags;
   }
