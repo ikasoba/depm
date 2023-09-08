@@ -272,26 +272,16 @@ export class Packages {
       }
 
       case "gh": {
-        const res = await fetch(
-          `https://api.github.com/repos/${parsedQuery.owner}/${parsedQuery.name}/tags`,
-        );
-        const tags: { name: string }[] = await res.json();
-
-        if (parsedQuery.tag && tags.every((x) => x.name != parsedQuery.tag)) {
-          return Result.err({
-            type: "version_not_found",
-            value: parsedQuery.tag,
-          });
-        }
-
-        const tag = parsedQuery.tag ?? tags[0].name;
+        let url = `https://esm.sh/gh/${parsedQuery.name}${
+          parsedQuery.tag ? "@" + parsedQuery.tag : ""
+        }${parsedQuery.path}`;
+        const res = await fetch(url, { redirect: "manual" });
+        if (res.status == 302) url = res.headers.get("Location")!;
 
         return Result.ok({
           type: parsedQuery.type,
           name: parsedQuery.alias,
-          url: new URL(
-            `https://raw.githubusercontent.com/${parsedQuery.owner}/${parsedQuery.name}/${tag}${parsedQuery.path}`,
-          ),
+          url: url,
         });
       }
 
