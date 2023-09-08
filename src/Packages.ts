@@ -121,7 +121,7 @@ export class Packages {
         owner: m[1],
         name: m[2],
         tag: m[3],
-        path: normalizePath(m[4]),
+        path: normalizePath(m[2]),
       };
     }
 
@@ -272,7 +272,7 @@ export class Packages {
       }
 
       case "gh": {
-        let url = `https://esm.sh/gh/${parsedQuery.name}${
+        let url = `https://esm.sh/gh/${parsedQuery.owner}/${parsedQuery.name}${
           parsedQuery.tag ? "@" + parsedQuery.tag : ""
         }${parsedQuery.path}`;
         const res = await fetch(url, { redirect: "manual" });
