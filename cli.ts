@@ -60,7 +60,7 @@ program
       cacheUrls.push(info.cacheUrl);
     }
 
-    if (noLock) {
+    if (!noLock) {
       await exec("deno", "cache", ...cacheUrls);
     }
 
