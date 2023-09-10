@@ -20,7 +20,7 @@ program
     let prevdepmJson;
     try {
       prevdepmJson = JSON.parse(
-        new TextDecoder().decode(await Deno.readFile("deno.json")),
+        new TextDecoder().decode(await Deno.readFile("import_map.json")),
       );
     } catch (_) {
       prevdepmJson = {};
@@ -65,7 +65,7 @@ program
     }
 
     await Deno.writeFile(
-      "deno.json",
+      "import_map.json",
       new TextEncoder().encode(
         JSON.stringify(
           {
@@ -95,7 +95,7 @@ program
     let prevdepmJson;
     try {
       prevdepmJson = JSON.parse(
-        new TextDecoder().decode(await Deno.readFile("deno.json")),
+        new TextDecoder().decode(await Deno.readFile("import_map.json")),
       );
     } catch (_) {
       prevdepmJson = {};
@@ -124,7 +124,7 @@ program
     }
 
     await Deno.writeFile(
-      "deno.json",
+      "import_map.json",
       new TextEncoder().encode(JSON.stringify(newdepmJson, null, "  ")),
     );
 
@@ -209,7 +209,7 @@ program.command("upgrade", "update to new version").action(async () => {
     "depm",
     "https://deno.land/x/depm/cli.ts",
     "--import-map",
-    "https://deno.land/x/depm/deno.json",
+    "https://deno.land/x/depm/import_map.json",
     "-A",
     "-f",
     "--reload",
